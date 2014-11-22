@@ -1,0 +1,23 @@
+{
+  "name": "herd-components",
+  "version": "0.0.0",
+  "authors": [
+    "Sebastian Bean <sebastian@ginlanemedia.com>"
+  ],
+  "keywords": [
+    "Polymer",
+    "web-components"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "polymer": "Polymer/polymer",
+    "platform": "Polymer/platform"
+  },
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
