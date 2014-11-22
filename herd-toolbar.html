@@ -1,0 +1,36 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/core-ajax/core-ajax.html">
+
+<polymer-element name="herd-toolbar" attributes="asset">
+  <template>
+  <style>
+  </style>
+  <core-ajax id='ajax'
+    url='{{apiUrl}}/{{asset.id}}'
+    method='DELETE'
+    headers='{{requestHeaders}}'
+    on-core-response={{handleResponse}}></core-ajax>
+
+    <button on-click={{handleClick}}>x</button>
+  </template>
+  <script>
+  Polymer({
+    asset: null,
+    apiUrl: '/herd/assets',
+    requestHeaders: {
+      'X-CSRF-Token':'PNC8PWDtCj5dEIwWsteNojuQ+aCM1LCmslGN80qzPmA='
+    },
+    handleResponse: function(event, resp) {
+      if (event.detail.status > 299) {
+        console.log(event)
+      }
+      else {
+        this.fire('delete', { asset: this.asset } )
+      }
+    },
+    handleClick: function() {
+      this.$.ajax.go()
+    }
+  })
+  </script>
+</polymer-element>

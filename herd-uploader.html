@@ -1,0 +1,85 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/ajax-form/ajax-form.html">
+<link rel="import" href="../bower_components/core-ajax/core-ajax.html">
+<link rel="import" href="./herd-tag.html">
+<link rel="import" href="./herd-toolbar.html">
+<link rel="import" href="./herd-transform.html">
+
+<polymer-element name="herd-uploader" attributes="atype aid">
+  <template>
+    <style>
+      :host {
+
+      }
+    </style>
+    <core-ajax auto on-core-response="{{handleResponse}}"
+      id="assets-ajax"
+      url='{{apiUrl}}'
+      params='{"assetable_type":"{{atype}}", "assetable_id":"{{aid}}"}'
+      handleAs="json"></core-ajax>
+
+    <form id='herd-uploader' is='ajax-form'
+      action='{{apiUrl}}' enctype='multipart/form-data' method='POST'
+      on-submitted={{handleSubmitted}}>
+      <input name="utf8" type="hidden" value="&#x2713;" />
+      <input name="authenticity_token" type="hidden" value="PNC8PWDtCj5dEIwWsteNojuQ+aCM1LCmslGN80qzPmA=" />
+
+      <input type='file' name='asset[file]' />
+      <input type='hidden' name='asset[assetable_type]' value='{{atype}}' />
+      <input type='hidden' name='asset[assetable_id]' value='{{aid}}' />
+      <input type='submit' />
+    </form>
+    <hr/>
+    <template repeat="{{asset in assets}}">
+      <herd-tag asset={{asset}} options='resize: 100x' name='gali'>
+        <herd-transform type='Herd::Video' name='butros' options='format: mp4'></herd-transform>
+      </herd-tag>
+      <herd-toolbar asset={{asset}} on-delete={{handleDelete}}></herd-toolbar>
+    </template>
+
+  </template>
+  <script>
+  Polymer({
+    atype: '',
+    aid: 0,
+    apiUrl: '/herd/assets',
+    assets: [],
+    handleResponse: function(event, resp) {
+      var allAssets = resp.response.assets
+      var transforms = resp.response.transforms
+      var children = allAssets.filter(function(e){
+        e.transform = transforms.filter(function(t) {
+          return e.transform_id == t.id
+        }).pop()
+        return e.parent_asset_id != null
+      })
+      var masters = allAssets.filter(function(e){
+        return e.parent_asset_id == null
+      })
+      for(var i = 0, l = masters.length; i < l; ++i) {
+        var a = masters[i]
+        a.child_assets = children.filter(function(e) {
+          return e.parent_asset_id == a.id
+        })
+      }
+      this.assets = masters
+    },
+    ready: function() {
+      var self = this
+      this.$['herd-uploader'].addEventListener('submitted', function(event) {
+          if (event.detail.status > 299) {
+            console.log(event)
+          }
+          else {
+            var payload = JSON.parse(event.detail.response)
+            self.assets.push(payload.asset)
+          }
+        }
+      );
+    },
+    handleDelete: function(event, obj) {
+      this.assets.splice(this.assets.indexOf(obj.asset),1)
+    }
+  });
+  </script>
+</polymer-element>

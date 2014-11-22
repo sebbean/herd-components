@@ -1,0 +1,127 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/core-ajax/core-ajax.html">
+
+<polymer-element name="herd-tag" attributes="aid asset options name">
+  <template>
+    <style>
+    </style>
+    <core-ajax id='get-ajax'
+      url='{{apiUrl}}/{{aid}}'
+      handleAs='json'
+      on-core-response={{handleGetResponse}}></core-ajax>
+
+    <core-ajax id='ajax'
+      url='{{apiUrl}}'
+      method='POST'
+      headers='{{requestHeaders}}'
+      contentType='application/json'
+      handleAs='json'
+      on-core-response={{handleResponse}}></core-ajax>
+
+    <template if='{{ child }}'>
+      <template if='{{ isImage() }}'>
+        <img src={{child.url}} />
+      </template>
+
+      <template if='{{ isVideo() }}'>
+        <video width='{{ child.width }}' height='{{ child.height }}' autoplay loop muted>
+          <source src='{{ child.url }}' type='{{ child.content_type }}'></source>
+        </video>
+      </template>
+    </template>
+
+    <content id='transforms' select='herd-transform'></content>
+  </template>
+  <script>
+  // body='{{requestPayload()}}'
+  Polymer({
+    options: '',
+    name: '',
+    aid: null,
+    asset: null,
+    child: null,
+    apiUrl: '/herd/assets',
+    requestHeaders: {
+      'X-CSRF-Token':'PNC8PWDtCj5dEIwWsteNojuQ+aCM1LCmslGN80qzPmA='
+    },
+    isVideo: function() {
+      return this.asset.type.match(/Video/) != null
+    },
+    isImage: function() {
+      return this.asset.type.match(/Image/) != null
+    },
+    ready: function() {
+      if (this.asset) {
+        console.log(this.combinedOptions())
+        if (this.asset.child_assets && this.options.length) {
+          var self = this
+          var match = this.asset.child_assets.filter(function(item) {
+            return item.transform.options == self.options
+          })
+          if (match.length) {
+            this.child = match.pop()
+          }
+        }
+        if (!this.child) {
+          this.$.ajax.body = this.requestPayload()
+          this.$.ajax.go()
+        }
+      }
+      else {
+        this.$['get-ajax'].go()
+      }
+    },
+    transformForType: function(type) {
+      var turnObjToArray = function(obj) {
+        return [].map.call(obj, function(element) {
+          return element;
+        })
+      };
+
+      var transforms = turnObjToArray(this.$.transforms.getDistributedNodes())
+      var found = transforms.filter(function(item) {
+        return item.type == type
+      })
+
+      return found.pop()
+    },
+    specificOptionsForType: function(type) {
+      var found = this.transformForType(type)
+
+      if (found) {
+        return found.options
+      } else
+        return ''
+    },
+    effectiveName: function() {
+      var found = this.transformForType(this.asset.type)
+
+      return found && found.name ? found.name : this.name
+    },
+    combinedOptions: function() {
+      var all =  this.options.split('|')
+      // use asset or child?
+      var scoped = this.specificOptionsForType(this.asset.type).split('|')
+      return all.concat(scoped).join('|')
+    },
+    requestPayload: function() {
+      return JSON.stringify({
+        asset: {
+          parent_asset_id: this.asset.id,
+          transform: {
+            options: this.combinedOptions(),
+            name: this.effectiveName()
+          }
+        }
+      })
+    },
+    handleResponse: function(event, resp) {
+      this.child = resp.response.asset
+    },
+    handleGetResponse: function(event, resp) {
+      console.log(resp)
+      debugger
+    }
+  })
+  </script>
+</polymer-element>
