@@ -5,6 +5,7 @@
 <link rel="import" href="./herd-tag.html">
 <link rel="import" href="./herd-toolbar.html">
 <link rel="import" href="./herd-transform.html">
+<link rel="import" href="./herd-config.html">
 
 <polymer-element name="herd-uploader" attributes="atype aid">
   <template>
@@ -13,6 +14,7 @@
 
       }
     </style>
+    <herd-config id='config'></herd-config>
     <core-ajax auto on-core-response="{{handleResponse}}"
       id="assets-ajax"
       url='{{apiUrl}}'
@@ -21,10 +23,11 @@
 
     <form id='herd-uploader' is='ajax-form'
       action='{{apiUrl}}' enctype='multipart/form-data' method='POST'
+      accept-charset="utf-8"
+      headers={{requestHeaders}}
       on-submitted={{handleSubmitted}}>
-      <input name="utf8" type="hidden" value="&#x2713;" />
-      <input name="authenticity_token" type="hidden" value="PNC8PWDtCj5dEIwWsteNojuQ+aCM1LCmslGN80qzPmA=" />
 
+      <input name="utf8" type="hidden" value="&#x2713;" />
       <input type='file' name='asset[file]' />
       <input type='hidden' name='asset[assetable_type]' value='{{atype}}' />
       <input type='hidden' name='asset[assetable_id]' value='{{aid}}' />
@@ -32,9 +35,7 @@
     </form>
     <hr/>
     <template repeat="{{asset in assets}}">
-      <herd-tag asset={{asset}} options='resize: 100x' name='gali'>
-        <herd-transform type='Herd::Video' name='butros' options='format: mp4'></herd-transform>
-      </herd-tag>
+      <herd-tag asset={{asset}} options='resize: x200' name='gali'></herd-tag>
       <herd-toolbar asset={{asset}} on-delete={{handleDelete}}></herd-toolbar>
     </template>
 
@@ -45,6 +46,7 @@
     aid: 0,
     apiUrl: '/herd/assets',
     assets: [],
+    requestHeaders: {},
     handleResponse: function(event, resp) {
       var allAssets = resp.response.assets
       var transforms = resp.response.transforms
@@ -66,6 +68,8 @@
       this.assets = masters
     },
     ready: function() {
+      this.requestHeaders = this.$.config.requestHeaders
+
       var self = this
       this.$['herd-uploader'].addEventListener('submitted', function(event) {
           if (event.detail.status > 299) {

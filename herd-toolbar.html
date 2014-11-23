@@ -1,10 +1,13 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../core-ajax/core-ajax.html">
 
+<link rel="import" href="./herd-config.html">
+
 <polymer-element name="herd-toolbar" attributes="asset">
   <template>
   <style>
   </style>
+  <herd-config id='config'></herd-config>
   <core-ajax id='ajax'
     url='{{apiUrl}}/{{asset.id}}'
     method='DELETE'
@@ -17,8 +20,9 @@
   Polymer({
     asset: null,
     apiUrl: '/herd/assets',
-    requestHeaders: {
-      'X-CSRF-Token':'PNC8PWDtCj5dEIwWsteNojuQ+aCM1LCmslGN80qzPmA='
+    requestHeaders: {},
+    ready: function() {
+      this.requestHeaders = this.$.config.requestHeaders
     },
     handleResponse: function(event, resp) {
       if (event.detail.status > 299) {

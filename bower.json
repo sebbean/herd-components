@@ -12,7 +12,8 @@
   "license": "MIT",
   "dependencies": {
     "polymer": "Polymer/polymer",
-    "platform": "Polymer/platform"
+    "platform": "Polymer/platform",
+    "js-yaml": "nodeca/js-yaml#~3.2.3"
   },
   "ignore": [
     "**/.*",

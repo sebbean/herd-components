@@ -1,10 +1,15 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../core-ajax/core-ajax.html">
 
+<link rel="import" href="./herd-config.html">
+
+<script src='../js-yaml/dist/js-yaml.min.js'></script>
+
 <polymer-element name="herd-tag" attributes="aid asset options name">
   <template>
     <style>
     </style>
+    <herd-config id='config'></herd-config>
     <core-ajax id='get-ajax'
       url='{{apiUrl}}/{{aid}}'
       handleAs='json'
@@ -13,7 +18,6 @@
     <core-ajax id='ajax'
       url='{{apiUrl}}'
       method='POST'
-      headers='{{requestHeaders}}'
       contentType='application/json'
       handleAs='json'
       on-core-response={{handleResponse}}></core-ajax>
@@ -41,9 +45,6 @@
     asset: null,
     child: null,
     apiUrl: '/herd/assets',
-    requestHeaders: {
-      'X-CSRF-Token':'PNC8PWDtCj5dEIwWsteNojuQ+aCM1LCmslGN80qzPmA='
-    },
     isVideo: function() {
       return this.asset.type.match(/Video/) != null
     },
@@ -52,11 +53,10 @@
     },
     ready: function() {
       if (this.asset) {
-        console.log(this.combinedOptions())
         if (this.asset.child_assets && this.options.length) {
           var self = this
           var match = this.asset.child_assets.filter(function(item) {
-            return item.transform.options == self.options
+            return item.transform.options == self.specficOptions()
           })
           if (match.length) {
             this.child = match.pop()
@@ -64,6 +64,7 @@
         }
         if (!this.child) {
           this.$.ajax.body = this.requestPayload()
+          this.$.ajax.headers = this.$.config.requestHeaders
           this.$.ajax.go()
         }
       }
@@ -71,22 +72,11 @@
         this.$['get-ajax'].go()
       }
     },
-    transformForType: function(type) {
-      var turnObjToArray = function(obj) {
-        return [].map.call(obj, function(element) {
-          return element;
-        })
-      };
-
-      var transforms = turnObjToArray(this.$.transforms.getDistributedNodes())
-      var found = transforms.filter(function(item) {
-        return item.type == type
-      })
-
-      return found.pop()
+    specficOptions: function() {
+      return this.specificOptionsForType(this.child ? this.child.type : this.asset.type)
     },
     specificOptionsForType: function(type) {
-      var found = this.transformForType(type)
+      var found = this.$.config.transformForType(type)
 
       if (found) {
         return found.options
@@ -94,14 +84,15 @@
         return ''
     },
     effectiveName: function() {
-      var found = this.transformForType(this.asset.type)
+      var found = this.$.config.transformForType(this.asset.type)
 
       return found && found.name ? found.name : this.name
     },
     combinedOptions: function() {
-      var all =  this.options.split('|')
+      var all =  jsyaml.load(this.options.split('|').join("\n"))
       // use asset or child?
-      var scoped = this.specificOptionsForType(this.asset.type).split('|')
+      var scoped = jsyaml.load(this.specificOptionsForType(this.asset.type).split('|').join('\n'))
+      debugger
       return all.concat(scoped).join('|')
     },
     requestPayload: function() {
