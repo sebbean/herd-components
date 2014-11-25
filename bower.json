@@ -1,6 +1,6 @@
 {
   "name": "herd-components",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "authors": [
     "Sebastian Bean <sebastian@ginlanemedia.com>"
   ],
@@ -13,7 +13,9 @@
   "dependencies": {
     "polymer": "Polymer/polymer",
     "platform": "Polymer/platform",
-    "js-yaml": "nodeca/js-yaml#~3.2.3"
+    "js-yaml": "nodeca/js-yaml#~3.2.3",
+    "three60": "sebbean/three60",
+    "zip.js": "sebbean/zip.js"
   },
   "ignore": [
     "**/.*",

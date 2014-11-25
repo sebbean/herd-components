@@ -4,6 +4,7 @@
 <link rel="import" href="./herd-config.html">
 
 <script src='../js-yaml/dist/js-yaml.min.js'></script>
+<script src='../three60/three60.js'></script>
 
 <polymer-element name="herd-tag" attributes="aid asset options name">
   <template>
@@ -22,9 +23,17 @@
       handleAs='json'
       on-core-response={{handleResponse}}></core-ajax>
 
+    <span id='spinbox' on-load={{setupSpin}}></span>
+
     <template if='{{ child }}'>
       <template if='{{ isImage() }}'>
-        <img src={{child.url}} />
+
+          <img src={{child.url}} />
+
+      </template>
+
+
+      <template if='{{ isSpin() }}'>
       </template>
 
       <template if='{{ isVideo() }}'>
@@ -37,6 +46,14 @@
     <content id='transforms' select='herd-transform'></content>
   </template>
   <script>
+  function extend(destination, source) {
+    for (var property in source) {
+        if (source.hasOwnProperty(property)) {
+            destination[property] = source[property];
+        }
+    }
+    return destination;
+  };
   // body='{{requestPayload()}}'
   Polymer({
     options: '',
@@ -46,17 +63,24 @@
     child: null,
     apiUrl: '/herd/assets',
     isVideo: function() {
-      return this.asset.type.match(/Video/) != null
+      return this.child.type.match(/Video/) != null
     },
     isImage: function() {
-      return this.asset.type.match(/Image/) != null
+      return this.child.type.match(/Image/) != null && !this.isSpin()
+    },
+    isSpin: function() {
+      return this.child.metadata.frame_count > 0
     },
     ready: function() {
       if (this.asset) {
         if (this.asset.child_assets && this.options.length) {
           var self = this
           var match = this.asset.child_assets.filter(function(item) {
-            return item.transform.options == self.specficOptions()
+            if (!self.effectiveType())
+              return item.transform.options == self.combinedOptions()
+            else
+              return  item.transform.options == self.combinedOptions() &&
+                      item.transform.type == self.effectiveType()
           })
           if (match.length) {
             this.child = match.pop()
@@ -70,6 +94,18 @@
       }
       else {
         this.$['get-ajax'].go()
+      }
+    },
+    setupSpin: function() {
+      var hat;
+      hat = new three60();
+      var pattern = this.child.url.replace('1.', '{i}.')
+      hat.init(this.$.spinbox, pattern, this.child.metadata.frame_count-1);
+    },
+    childChanged: function(oldVal, newVal) {
+      // console.log('child changed', newVal)
+      if (this.isSpin()) {
+        this.setupSpin()
       }
     },
     specficOptions: function() {
@@ -88,12 +124,17 @@
 
       return found && found.name ? found.name : this.name
     },
+    effectiveType: function() {
+      var found = this.$.config.transformForType(this.asset.type)
+
+      return found && found.attributes && found.attributes.type ? found.attributes.type.value : null
+    },
     combinedOptions: function() {
       var all =  jsyaml.load(this.options.split('|').join("\n"))
       // use asset or child?
       var scoped = jsyaml.load(this.specificOptionsForType(this.asset.type).split('|').join('\n'))
-      debugger
-      return all.concat(scoped).join('|')
+      var merged = extend(all, scoped)
+      return jsyaml.safeDump(merged).trim()
     },
     requestPayload: function() {
       return JSON.stringify({
@@ -101,7 +142,8 @@
           parent_asset_id: this.asset.id,
           transform: {
             options: this.combinedOptions(),
-            name: this.effectiveName()
+            name: this.effectiveName(),
+            type: this.effectiveType()
           }
         }
       })
