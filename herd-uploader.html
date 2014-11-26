@@ -28,7 +28,10 @@
       headers={{requestHeaders}}
       on-submitted={{handleSubmitted}}>
 
-      <input type='file' name='asset[file]' />
+      <!-- <input type='file' name='asset[file]' /> -->
+      <file-input accept="image/*,video/*" name='asset[file]'>
+          Select Files
+      </file-input>
       <input type='hidden' name='asset[assetable_type]' value='{{atype}}' />
       <input type='hidden' name='asset[assetable_id]' value='{{aid}}' />
       <input type='submit' />
