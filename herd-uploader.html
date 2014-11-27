@@ -16,11 +16,6 @@
       }
     </style>
     <herd-config id='config'></herd-config>
-    <core-ajax auto on-core-response="{{handleResponse}}"
-      id="assets-ajax"
-      url='{{apiUrl}}'
-      params='{"assetable_type":"{{atype}}", "assetable_id":"{{aid}}"}'
-      handleAs="json"></core-ajax>
 
     <form id='herd-uploader' is='ajax-form'
       action='{{apiUrl}}' enctype='multipart/form-data' method='POST'
@@ -42,6 +37,12 @@
       <herd-toolbar asset={{asset}} on-delete={{handleDelete}}></herd-toolbar>
     </template>
 
+    <core-ajax auto on-core-response="{{handleResponse}}"
+      id="assets-ajax"
+      url='{{apiUrl}}'
+      params='{"assetable_type":"{{atype}}", "assetable_id":"{{aid}}"}'
+      handleAs="json"></core-ajax>
+
   </template>
   <script>
   Polymer({
@@ -54,18 +55,20 @@
       var allAssets = resp.response.assets
       var transforms = resp.response.transforms
       var children = allAssets.filter(function(e){
-        e.transform = transforms.filter(function(t) {
-          return e.transform_id == t.id
-        }).pop()
+        if (transforms) {
+          e.transform = transforms.filter(function(t) {
+            return e.transform_id == t.id
+          }).pop()
+        }
         return e.parent_asset_id != null
       })
       var masters = allAssets.filter(function(e){
-        return e.parent_asset_id == null
+        return e.master_asset_id == null
       })
       for(var i = 0, l = masters.length; i < l; ++i) {
         var a = masters[i]
         a.child_assets = children.filter(function(e) {
-          return e.parent_asset_id == a.id
+          return e.master_asset_id == a.id
         })
       }
       this.assets = masters
