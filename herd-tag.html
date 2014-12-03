@@ -3,7 +3,7 @@
 
 <link rel="import" href="./herd-config.html">
 
-<script src='../js-yaml/dist/js-yaml.min.js'></script>
+<script src='../yaml.js/dist/yaml.min.js'></script>
 <script src='../three60/three60.js'></script>
 
 <polymer-element name="herd-tag" attributes="aid asset options name">
@@ -130,11 +130,11 @@
       return found && found.attributes && found.attributes.type ? found.attributes.type.value : null
     },
     combinedOptions: function() {
-      var all =  jsyaml.load(this.options.split('|').join("\n"))
+      var all =  YAML.parse(this.options.split('|').join("\n"))
       // use asset or child?
-      var scoped = jsyaml.load(this.specificOptionsForType(this.asset.type).split('|').join('\n'))
+      var scoped = YAML.parse(this.specificOptionsForType(this.asset.type).split('|').join('\n'))
       var merged = extend(all, scoped)
-      return jsyaml.safeDump(merged).trim().split('\n').join('|')
+      return YAML.stringify(merged).trim().split('\n').join('|')
     },
     requestPayload: function() {
       return JSON.stringify({
